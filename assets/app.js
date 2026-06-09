@@ -337,4 +337,7 @@
   wirePanel();
   refreshConn();
   render();
+
+  // Sweep expired (ticked-off > 1 week) todo/shopping items hourly while open.
+  setInterval(function () { store.purgeExpired(); }, 60 * 60 * 1000);
 })();

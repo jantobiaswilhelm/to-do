@@ -15,6 +15,9 @@
   'use strict';
 
   var LISTS = ['todo', 'shopping', 'bucket'];
+  // Completed items in these lists are auto-removed a week after being ticked off.
+  var EXPIRE_LISTS = ['todo', 'shopping'];
+  var EXPIRE_MS = 7 * 24 * 60 * 60 * 1000;
 
   function emptyData() {
     return { version: 1, todo: [], shopping: [], bucket: [] };
@@ -104,11 +107,13 @@
     var self = this;
     // Always seed from the local cache first for an instant render.
     this._loadCache();
+    this.purgeExpired();
     this._notify();
 
     if (this._syncEnabled()) {
       var loader = this.backend === 'gist' ? this._gistLoad() : this._githubLoad();
       return loader.then(function () {
+        self.purgeExpired();
         self._notify();
       }).catch(function (err) {
         self._status('error', (err && err.message) || 'Sync load failed');
@@ -145,7 +150,26 @@
 
   TodoStore.prototype.toggle = function (list, id) {
     var it = this._find(list, id);
-    if (it) { it.done = !it.done; this._changed(); }
+    if (it) {
+      it.done = !it.done;
+      if (it.done) it.doneAt = Date.now();   // start the 1-week expiry clock
+      else delete it.doneAt;
+      this._changed();
+    }
+  };
+
+  // Remove completed todo/shopping items ticked off more than a week ago.
+  TodoStore.prototype.purgeExpired = function () {
+    var now = Date.now(), removed = 0, self = this;
+    EXPIRE_LISTS.forEach(function (list) {
+      var before = self.data[list].length;
+      self.data[list] = self.data[list].filter(function (it) {
+        return !(it.done && it.doneAt && (now - it.doneAt) > EXPIRE_MS);
+      });
+      removed += before - self.data[list].length;
+    });
+    if (removed) this._changed();
+    return removed;
   };
 
   TodoStore.prototype.edit = function (list, id, text) {
@@ -203,7 +227,7 @@
     var self = this;
     if (!this._syncEnabled()) return Promise.resolve();
     var loader = this.backend === 'gist' ? this._gistLoad() : this._githubLoad();
-    return loader.then(function () { self._notify(); });
+    return loader.then(function () { self.purgeExpired(); self._notify(); });
   };
 
   // ---- github sync ----
@@ -354,6 +378,7 @@
         if (Array.isArray(d[list])) {
           out[list] = d[list].filter(function (it) { return it && it.text; }).map(function (it) {
             var item = { id: it.id || uid(), text: String(it.text), done: !!it.done };
+            if (item.done && it.doneAt) item.doneAt = Number(it.doneAt) || undefined;
             if (list === 'todo') {
               item.term = it.term === 'now' ? 'now' : 'later';
               item.due = typeof it.due === 'string' ? it.due : '';

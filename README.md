@@ -6,6 +6,8 @@ A small personal productivity website with three areas:
 - **Shopping list** — things to buy.
 - **Bucket list** — activities and longer-term goals.
 
+Completed **To-Do** and **Shopping** items are cleared automatically **one week after they're ticked off** (Bucket list items are kept).
+
 Dark UI with a colour per section. Static site, hostable on **GitHub Pages**, with data **synced across devices** via a private GitHub gist.
 
 `index.html` is the live site. The `previews/` folder holds the three design explorations (minimal / colorful / dark) and can be deleted.
@@ -20,8 +22,10 @@ automatically on first use. The token is stored only in your browser
 
 ### Connecting (click ⚙ on the site)
 
-1. Create a token with **gist** access — the ⚙ panel links straight to the right page
-   (`Settings → Developer settings → Tokens → gist scope`).
+1. Create a token. It only needs **gist** access — no repository access at all:
+   - **Classic token** (simplest): tick the single **`gist`** scope. The ⚙ panel links
+     straight to this pre-filled page.
+   - **Fine-grained token**: Account permissions → **Gists: Read and write**.
 2. Paste it into the panel and click **Connect**.
 3. A secret gist named `todo-data.json` is created and kept in sync. Use the same
    token on another device to see the same lists.
@@ -41,9 +45,7 @@ encrypted; anyone with the gist URL could read it, so don't share it.
 ## Files
 
 ```
-index.html            # the live site (dark + colourful)
-assets/storage.js     # data model + localStorage / gist sync
-assets/app.js          # rendering, due dates, priority, sorting, sync panel
-assets/preview-app.js  # shared logic for the design previews
-previews/             # three design explorations (optional, can be deleted)
+index.html          # the live site (dark + colourful)
+assets/storage.js   # data model + localStorage / gist sync + expiry
+assets/app.js       # rendering, due dates, priority, sorting, sync panel
 ```
