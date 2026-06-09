@@ -313,26 +313,69 @@
   };
 
   // ---- gist sync (secret gist) ----
-  TodoStore.prototype._gistLoad = function () {
+
+  // Find an existing todo gist this token already owns, so every device with the
+  // same token converges on ONE gist instead of each creating its own.
+  TodoStore.prototype._findGist = function () {
     var self = this;
-    var id = this.getGistId();
-    if (!id) { this._status('idle', 'No gist yet'); return Promise.resolve(); }
-    this._status('syncing', 'Loading…');
+    return fetch('https://api.github.com/gists?per_page=100', { headers: this._headers() })
+      .then(function (res) {
+        if (res.status === 401) throw new Error('Token rejected (401) — needs gist access');
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then(function (list) {
+        if (!Array.isArray(list)) return null;
+        // GitHub returns gists most-recently-updated first → pick the freshest match.
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].files && list[i].files[self.gist.filename]) return list[i].id;
+        }
+        return null;
+      });
+  };
+
+  TodoStore.prototype._fetchGist = function (id) {
+    var self = this;
     return fetch('https://api.github.com/gists/' + id, { headers: this._headers() })
       .then(function (res) {
-        if (res.status === 404) { self.setGistId(''); self._status('idle', 'Gist not found'); return null; }
+        if (res.status === 404) { self.setGistId(''); return null; }
         if (res.status === 401) throw new Error('Token rejected (401) — needs gist access');
         if (!res.ok) throw new Error('Load failed (' + res.status + ')');
         return res.json();
-      })
-      .then(function (json) {
-        if (!json || !json.files) return;
-        var file = json.files[self.gist.filename];
-        if (!file || !file.content) return;
-        self.data = normalize(JSON.parse(file.content));
-        self._writeCache();
-        self._status('idle', 'Synced');
       });
+  };
+
+  TodoStore.prototype._applyGist = function (json) {
+    if (json && json.files) {
+      var file = json.files[this.gist.filename];
+      if (file && file.content) {
+        this.data = normalize(JSON.parse(file.content));
+        this._writeCache();
+      }
+    }
+    this._status('idle', 'Synced');
+  };
+
+  TodoStore.prototype._gistLoad = function () {
+    var self = this;
+    this._status('syncing', 'Loading…');
+    // Use the known id, otherwise discover one this token already owns.
+    var resolveId = this.getGistId()
+      ? Promise.resolve(this.getGistId())
+      : this._findGist().then(function (fid) { if (fid) self.setGistId(fid); return fid; });
+
+    return resolveId.then(function (id) {
+      if (!id) { self._status('idle', 'No gist yet'); return; }
+      return self._fetchGist(id).then(function (json) {
+        if (json !== null) { self._applyGist(json); return; }
+        // stored id was stale/deleted (cleared above) — discover the real one once
+        return self._findGist().then(function (fid) {
+          if (!fid) { self._status('idle', 'No gist yet'); return; }
+          self.setGistId(fid);
+          return self._fetchGist(fid).then(function (j) { self._applyGist(j); });
+        });
+      });
+    });
   };
 
   TodoStore.prototype._gistSave = function () {
