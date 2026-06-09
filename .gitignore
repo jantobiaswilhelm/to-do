@@ -7,3 +7,6 @@ Thumbs.db
 
 # The GitHub token is stored only in the browser (localStorage),
 # never written to disk — nothing token-related to ignore here.
+
+# Claude Code local settings
+.claude/
