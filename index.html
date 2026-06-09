@@ -90,16 +90,14 @@
   /* grid + cards */
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 26px; }
   .card {
-    --c: var(--todo); grid-column: span 2;
+    --c: var(--todo); grid-column: span 1;
     background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 22px 22px 24px;
     backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 18px 50px -28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
     position: relative; overflow: hidden;
   }
-  .card.todo { --c: var(--todo); }
-  .card.shopping { --c: var(--shop); grid-column: span 1; }
-  .card.bucket { --c: var(--bucket); grid-column: span 1; }
-  @media (max-width: 680px) { .card.shopping, .card.bucket { grid-column: span 2; } }
+  .card.wide { grid-column: span 2; }
+  @media (max-width: 680px) { .card { grid-column: span 2 !important; } }
   .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; background: linear-gradient(90deg, transparent, var(--c), transparent); opacity: 0.7; }
   .card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(420px 160px at 0% 0%, color-mix(in srgb, var(--c) 12%, transparent), transparent 70%); }
   .card > * { position: relative; z-index: 1; }
@@ -175,10 +173,103 @@
   .due-clear { background: none; border: none; color: inherit; cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 1px; position: relative; z-index: 2; opacity: 0.7; }
   .due-clear:hover { opacity: 1; color: var(--danger); }
 
+  li.draggable { align-items: center; }
+  .grip { flex: none; cursor: grab; color: rgba(255,255,255,0.22); font-size: 14px; line-height: 1; padding: 2px; user-select: none; touch-action: none; transition: color .12s; }
+  .grip:hover { color: var(--c); }
+  .grip:active { cursor: grabbing; }
+  .stars-inline { flex: none; }
+  .drag-ghost { opacity: 0.35; }
+  .sortable-chosen { background: var(--glass); }
+
   .del { background: none; border: none; color: var(--muted); cursor: pointer; opacity: 0; font-size: 19px; line-height: 1; padding: 2px 6px; border-radius: 8px; margin-top: 1px; }
   li.item:hover .del { opacity: 1; }
   .del:hover { color: var(--danger); }
   .empty { color: var(--muted); padding: 10px 6px; font-size: 14px; font-style: italic; }
+
+  .txt { cursor: pointer; }
+  .txt:hover { color: #fff; }
+  .itag { font-size: 11px; margin-left: 6px; text-decoration: none; vertical-align: middle; opacity: 0.85; }
+  a.itag:hover { opacity: 1; }
+
+  /* detail modal */
+  .modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px;
+    background: rgba(4,6,12,0.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: mfade .15s ease; }
+  .modal[hidden] { display: none; }
+  @keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
+  .modal-card { width: 100%; max-width: 460px; background: #11151f; border: 1px solid var(--border);
+    border-radius: 18px; padding: 20px; box-shadow: 0 30px 80px -20px rgba(0,0,0,0.8); animation: mrise .18s ease; }
+  @keyframes mrise { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .modal-tag { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--todo); }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; padding: 0 4px; }
+  .modal-close:hover { color: var(--text); }
+  .d-title { width: 100%; font: inherit; font-size: 18px; font-weight: 600; color: var(--text);
+    background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 11px; padding: 11px 13px; outline: none; }
+  .d-title:focus { border-color: var(--todo); }
+  .d-label { display: block; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--muted); margin: 16px 0 6px; }
+  .d-links { display: flex; flex-direction: column; gap: 8px; }
+  .d-link-row { display: flex; gap: 6px; align-items: center; }
+  .d-link-url, .d-link-label, #d-notes { font: inherit; font-size: 14px; color: var(--text);
+    background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 11px; padding: 10px 13px; outline: none; }
+  .d-link-url { flex: 1 1 55%; }
+  .d-link-label { flex: 1 1 45%; min-width: 0; }
+  .d-link-url:focus, .d-link-label:focus, #d-notes:focus { border-color: var(--todo); }
+  #d-notes { width: 100%; resize: vertical; line-height: 1.5; min-height: 96px; }
+  .d-link-open { color: var(--todo); text-decoration: none; font-size: 15px; padding: 0 2px; }
+  .d-link-del { background: none; border: none; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; }
+  .d-link-del:hover { color: var(--danger); }
+  .d-addlink { align-self: flex-start; margin-top: 8px; font: inherit; font-size: 13px; color: var(--todo);
+    background: none; border: 1px dashed var(--border); border-radius: 10px; padding: 7px 12px; cursor: pointer; }
+  .d-addlink:hover { border-color: var(--todo); }
+  .modal-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
+  .d-hint { font-size: 12px; color: var(--muted); }
+
+  .modal-card { max-height: 88vh; overflow-y: auto; }
+
+  /* section menu + add-section card */
+  .sec-menu { margin-left: 8px; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 8px; flex: none; }
+  .sec-menu:hover { color: var(--c); }
+  .add-section { grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: transparent; border: 1.5px dashed var(--border); border-radius: 20px; color: var(--muted);
+    font: inherit; font-size: 15px; padding: 20px; cursor: pointer; transition: border-color .15s, color .15s; }
+  .add-section:hover { border-color: var(--todo); color: var(--todo); }
+  .add-section span { font-size: 19px; }
+
+  li.colored { box-shadow: inset 3px 0 0 var(--item-color); padding-left: 9px; }
+
+  /* colour swatches */
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .swatch { width: 26px; height: 26px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; padding: 0; }
+  .swatch.on { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.45); }
+  .swatch.none { background: rgba(255,255,255,0.06); color: var(--muted); display: grid; place-items: center; font-size: 13px; }
+
+  .d-due-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #d-due, #d-recur, #se-sort, #se-expire { width: 100%; font: inherit; font-size: 14px; color: var(--text);
+    background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 11px; padding: 10px 12px; outline: none; color-scheme: dark; }
+  #d-due:focus, #d-recur:focus, #se-sort:focus, #se-expire:focus { border-color: var(--todo); }
+
+  /* subtasks */
+  .d-subs { display: flex; flex-direction: column; gap: 6px; }
+  .d-sub-row { display: flex; align-items: center; gap: 8px; }
+  .d-sub-check { width: 18px; height: 18px; accent-color: var(--todo); flex: none; }
+  .d-sub-text { flex: 1; font: inherit; font-size: 14px; color: var(--text); background: rgba(0,0,0,0.22);
+    border: 1px solid var(--border); border-radius: 9px; padding: 7px 10px; outline: none; }
+  .d-sub-row.done .d-sub-text { color: var(--muted); text-decoration: line-through; }
+  .d-sub-del { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 0 4px; }
+  .d-sub-del:hover { color: var(--danger); }
+  .d-sub-add { display: flex; gap: 8px; margin-top: 8px; }
+  .d-sub-add input { flex: 1; font: inherit; font-size: 14px; color: var(--text); background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border); border-radius: 11px; padding: 9px 12px; outline: none; }
+  .d-sub-add input:focus { border-color: var(--todo); }
+
+  /* section editor */
+  .se-name-row { display: flex; gap: 8px; }
+  .se-icon { width: 52px; text-align: center; font-size: 18px; color: var(--text); background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border); border-radius: 11px; padding: 11px 6px; outline: none; }
+  .se-icon:focus { border-color: var(--todo); }
+  .se-check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text); margin: 8px 0; cursor: pointer; }
+  .se-check input { width: 17px; height: 17px; accent-color: var(--todo); }
 
   footer { margin-top: 32px; display: flex; justify-content: space-between; align-items: center; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); }
   .clear { font: inherit; font-size: 12px; background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; cursor: pointer; color: var(--muted); }
@@ -219,60 +310,99 @@
       </div>
     </header>
 
-    <div class="grid">
-      <section class="card todo" data-list="todo">
-        <div class="card-top"><span class="glyph"></span><h2>To-Do</h2><span class="count" data-count></span></div>
-        <form class="add" autocomplete="off">
-          <input type="text" placeholder="Add a task…" aria-label="New task" />
-          <input class="due-input" type="date" aria-label="Due date" />
-          <span class="star-pick" role="group" aria-label="Priority">
-            <button type="button" data-star="1">★</button>
-            <button type="button" data-star="2">★</button>
-            <button type="button" data-star="3">★</button>
-          </span>
-          <span class="term-toggle" role="group" aria-label="When">
-            <button type="button" data-term="now" class="on">This week</button>
-            <button type="button" data-term="later">Someday</button>
-          </span>
-          <button class="add-btn" type="submit">Add</button>
-        </form>
-        <div class="cols">
-          <div>
-            <div class="subhead">Today &amp; this week</div>
-            <ul class="list" data-group="now"></ul>
-          </div>
-          <div>
-            <div class="subhead">To handle / someday</div>
-            <ul class="list" data-group="later"></ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="card shopping" data-list="shopping">
-        <div class="card-top"><span class="glyph"></span><h2>Shopping</h2><span class="count" data-count></span></div>
-        <form class="add" autocomplete="off">
-          <input type="text" placeholder="Add an item…" aria-label="New item" />
-          <button class="add-btn" type="submit">Add</button>
-        </form>
-        <ul class="list" data-group="all"></ul>
-      </section>
-
-      <section class="card bucket" data-list="bucket">
-        <div class="card-top"><span class="glyph"></span><h2>Bucket list</h2><span class="count" data-count></span></div>
-        <form class="add" autocomplete="off">
-          <input type="text" placeholder="Add a goal…" aria-label="New goal" />
-          <button class="add-btn" type="submit">Add</button>
-        </form>
-        <ul class="list" data-group="all"></ul>
-      </section>
-    </div>
+    <div class="grid" id="grid"></div>
 
     <footer>
-      <span id="footnote">tip: set ＋ due and stars on tasks · ticked-off to-dos &amp; shopping clear after 1 week</span>
+      <span id="footnote">tip: click a task for links, notes, colour &amp; subtasks · ⋯ to edit a section · ＋ to add one</span>
       <button class="clear" id="clearDone">clear completed</button>
     </footer>
   </div>
 
+  <div id="detail" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Task details">
+      <div class="modal-head">
+        <span class="modal-tag" id="d-list"></span>
+        <button class="modal-close" id="d-close" aria-label="Close">×</button>
+      </div>
+      <input id="d-title" class="d-title" placeholder="Title" autocomplete="off" />
+
+      <label class="d-label">Colour</label>
+      <div id="d-colors" class="swatches"></div>
+
+      <div id="d-due-row">
+        <div class="d-due-grid">
+          <div>
+            <label class="d-label" for="d-due">Due date</label>
+            <input id="d-due" type="date" />
+          </div>
+          <div>
+            <label class="d-label" for="d-recur">Repeat</label>
+            <select id="d-recur">
+              <option value="none">No repeat</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <label class="d-label">Links</label>
+      <div id="d-links" class="d-links"></div>
+      <button type="button" class="d-addlink" id="d-addlink">+ Add link</button>
+
+      <label class="d-label">Subtasks</label>
+      <div id="d-subs" class="d-subs"></div>
+      <div class="d-sub-add">
+        <input id="d-subnew" type="text" placeholder="Add a subtask…" autocomplete="off" />
+        <button type="button" class="d-addlink" id="d-addsub">+ Add</button>
+      </div>
+
+      <label class="d-label" for="d-notes">Notes</label>
+      <textarea id="d-notes" placeholder="Add notes…" rows="5"></textarea>
+      <div class="modal-foot">
+        <button class="btn ghost" id="d-delete">Delete task</button>
+        <span class="d-hint">Saved automatically</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="sectionEditor" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Section settings">
+      <div class="modal-head">
+        <span class="modal-tag">Section</span>
+        <button class="modal-close" id="se-close" aria-label="Close">×</button>
+      </div>
+      <div class="se-name-row">
+        <input id="se-icon" class="se-icon" maxlength="2" placeholder="🙂" aria-label="Icon (emoji)" />
+        <input id="se-name" class="d-title" placeholder="Section name" autocomplete="off" />
+      </div>
+      <label class="d-label">Colour</label>
+      <div id="se-colors" class="swatches"></div>
+      <label class="d-label">Options</label>
+      <label class="se-check"><input type="checkbox" id="se-due" /> Due dates on items</label>
+      <label class="se-check"><input type="checkbox" id="se-term" /> Split into “This week / Someday”</label>
+      <div class="d-due-grid">
+        <div>
+          <label class="d-label" for="se-sort">Sort</label>
+          <select id="se-sort">
+            <option value="manual">Manual (drag to order)</option>
+            <option value="priority">By priority &amp; due date</option>
+          </select>
+        </div>
+        <div>
+          <label class="d-label" for="se-expire">Clear done after (days, 0 = never)</label>
+          <input id="se-expire" type="number" min="0" step="1" />
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" id="se-delete">Delete section</button>
+        <span class="d-hint">Saved automatically</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/Sortable.min.js"></script>
   <script src="assets/storage.js"></script>
   <script src="assets/app.js"></script>
   <script>
