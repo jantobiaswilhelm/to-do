@@ -282,9 +282,11 @@
     var connected = store.hasToken();
     var connState = document.getElementById('connState');
     var signOut = document.getElementById('signOut');
+    var syncNow = document.getElementById('syncNow');
     var gistLink = document.getElementById('gistLink');
     if (connState) connState.textContent = connected ? 'Connected — syncing to a secret gist.' : 'Not connected. Your lists are saved in this browser only.';
     if (signOut) signOut.style.display = connected ? '' : 'none';
+    if (syncNow) syncNow.style.display = connected ? '' : 'none';
     if (gistLink) {
       var url = store.gistUrl();
       if (connected && url) { gistLink.style.display = ''; gistLink.href = url; }
@@ -321,6 +323,21 @@
         store._changed();
         refreshConn();
       }).catch(function (e) { setStatus('error', e.message); });
+    });
+
+    var syncNow = document.getElementById('syncNow');
+    if (syncNow) syncNow.addEventListener('click', function () {
+      if (!store.hasToken()) return;
+      syncNow.classList.add('spin');
+      setStatus('syncing', 'Pulling latest…');
+      // connect() pulls the gist, purges expired, and re-renders via onChange
+      store.connect().then(function () {
+        refreshConn();
+      }).catch(function (e) {
+        setStatus('error', e.message);
+      }).then(function () {
+        syncNow.classList.remove('spin');
+      });
     });
 
     if (signOut) signOut.addEventListener('click', function () {
