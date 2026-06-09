@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>To-Do</title>
+<meta name="color-scheme" content="dark" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0d14;
+    --glass: rgba(255,255,255,0.045);
+    --glass-2: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.10);
+    --text: #e8ecf4;
+    --muted: #7f8aa6;
+    --danger: #ff7a7a;
+    /* per-section accents */
+    --todo: #5df2c9;
+    --shop: #ffc24b;
+    --bucket: #b07bff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Sora", sans-serif; color: var(--text); min-height: 100vh; background: var(--bg);
+    background-image:
+      radial-gradient(820px 480px at 10% -8%, rgba(93,242,201,0.15), transparent 60%),
+      radial-gradient(720px 440px at 60% -12%, rgba(255,194,75,0.10), transparent 60%),
+      radial-gradient(760px 460px at 95% 2%, rgba(176,123,255,0.16), transparent 58%);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 52px 22px 120px; }
+
+  /* header */
+  header { margin-bottom: 30px; }
+  .topbar { display: flex; align-items: center; gap: 12px; }
+  .eyebrow { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--todo); flex: 1; }
+  h1 { font-weight: 700; font-size: clamp(38px, 6.5vw, 60px); line-height: 1.02; letter-spacing: -0.02em; margin-top: 14px; }
+  h1 .a1 { color: var(--todo); text-shadow: 0 0 26px rgba(93,242,201,0.5); }
+  h1 .a2 { color: var(--shop); }
+  h1 .a3 { color: var(--bucket); }
+  .sub { color: var(--muted); margin-top: 12px; font-size: 15px; max-width: 50ch; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px; font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--glass); color: var(--muted); white-space: nowrap;
+  }
+  .pill .ring { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill[data-state="idle"] .ring { background: var(--todo); box-shadow: 0 0 10px var(--todo); }
+  .pill[data-state="syncing"] .ring { background: var(--shop); box-shadow: 0 0 10px var(--shop); animation: pulse 1s infinite; }
+  .pill[data-state="error"] .ring { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--glass);
+    color: var(--text); cursor: pointer; font-size: 17px; display: grid; place-items: center; transition: border-color .15s, background .15s;
+  }
+  .icon-btn:hover { border-color: var(--todo); background: var(--glass-2); }
+
+  /* settings panel */
+  #settingsPanel {
+    margin-top: 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  #settingsPanel h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  #settingsPanel p { font-size: 13.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  #settingsPanel p a { color: var(--todo); }
+  .field { display: flex; gap: 8px; flex-wrap: wrap; }
+  .field input {
+    flex: 1 1 240px; font: inherit; font-size: 14px; padding: 11px 13px; border-radius: 11px;
+    border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: var(--text); outline: none;
+  }
+  .field input:focus { border-color: var(--todo); }
+  .btn {
+    font: inherit; font-weight: 600; font-size: 14px; padding: 11px 16px; border-radius: 11px; cursor: pointer;
+    border: 1px solid var(--todo); background: rgba(93,242,201,0.12); color: var(--todo);
+  }
+  .btn:hover { background: rgba(93,242,201,0.2); }
+  .btn.ghost { border-color: var(--border); background: transparent; color: var(--muted); }
+  .btn.ghost:hover { border-color: var(--danger); color: var(--danger); }
+  .conn-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  #connState { font-size: 13px; color: var(--muted); }
+  #gistLink { font-size: 13px; color: var(--todo); font-family: "JetBrains Mono", monospace; }
+
+  /* grid + cards */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 26px; }
+  .card {
+    --c: var(--todo); grid-column: span 2;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 22px 22px 24px;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 18px 50px -28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative; overflow: hidden;
+  }
+  .card.todo { --c: var(--todo); }
+  .card.shopping { --c: var(--shop); grid-column: span 1; }
+  .card.bucket { --c: var(--bucket); grid-column: span 1; }
+  @media (max-width: 680px) { .card.shopping, .card.bucket { grid-column: span 2; } }
+  .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; background: linear-gradient(90deg, transparent, var(--c), transparent); opacity: 0.7; }
+  .card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(420px 160px at 0% 0%, color-mix(in srgb, var(--c) 12%, transparent), transparent 70%); }
+  .card > * { position: relative; z-index: 1; }
+
+  .card-top { display: flex; align-items: center; gap: 11px; margin-bottom: 6px; }
+  .glyph { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 14px var(--c); flex: none; }
+  .card h2 { font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
+  .count { margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px; }
+
+  /* add forms */
+  form.add { display: flex; gap: 8px; margin: 14px 0 8px; flex-wrap: wrap; align-items: center; }
+  form.add input[type=text] {
+    flex: 1 1 180px; font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 12px;
+    border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); outline: none;
+  }
+  form.add input[type=text]:focus { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 16%, transparent); }
+  form.add input::placeholder { color: var(--muted); }
+  .due-input {
+    font: inherit; font-size: 13px; padding: 9px 11px; border-radius: 11px; color-scheme: dark;
+    border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--muted); outline: none;
+  }
+  .due-input:focus { border-color: var(--c); color: var(--text); }
+  .star-pick { display: inline-flex; gap: 2px; background: rgba(0,0,0,0.28); border: 1px solid var(--border); border-radius: 11px; padding: 4px 6px; }
+  .star-pick button { font-size: 16px; line-height: 1; background: none; border: none; cursor: pointer; color: var(--muted); padding: 2px; transition: transform .1s, color .12s; }
+  .star-pick button:hover { transform: scale(1.15); }
+  .star-pick button.on { color: var(--c); text-shadow: 0 0 10px color-mix(in srgb, var(--c) 60%, transparent); }
+  .term-toggle { display: inline-flex; background: rgba(0,0,0,0.28); border: 1px solid var(--border); border-radius: 11px; padding: 2px; }
+  .term-toggle button { font: inherit; font-size: 13px; padding: 7px 11px; border: none; background: transparent; border-radius: 9px; cursor: pointer; color: var(--muted); }
+  .term-toggle button.on { background: var(--glass-2); color: var(--c); }
+  .add-btn {
+    font: inherit; font-weight: 600; font-size: 15px; padding: 11px 17px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c);
+    transition: background .15s, box-shadow .15s;
+  }
+  .add-btn:hover { background: color-mix(in srgb, var(--c) 22%, transparent); box-shadow: 0 0 22px -6px var(--c); }
+
+  .subhead { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 16px 0 4px; }
+  .todo .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 26px; }
+  @media (max-width: 600px) { .todo .cols { grid-template-columns: 1fr; } }
+
+  /* items */
+  ul.list { list-style: none; }
+  li.item { display: flex; align-items: flex-start; gap: 12px; padding: 9px 6px; border-radius: 11px; animation: fade .3s ease both; }
+  li.item:hover { background: var(--glass); }
+  @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  .check {
+    appearance: none; -webkit-appearance: none; width: 21px; height: 21px; border-radius: 50%; margin-top: 1px;
+    border: 1.5px solid var(--muted); cursor: pointer; flex: none; position: relative; transition: all .18s;
+  }
+  .check:hover { border-color: var(--c); }
+  .check:checked { background: var(--c); border-color: var(--c); box-shadow: 0 0 16px -2px var(--c); }
+  .check:checked::after { content: ""; position: absolute; left: 6.5px; top: 3px; width: 5px; height: 9px; border: solid #07120e; border-width: 0 2px 2px 0; transform: rotate(42deg); }
+
+  .main { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .txt { font-size: 15.5px; word-break: break-word; cursor: text; outline: none; }
+  .txt:focus { color: #fff; }
+  li.done .txt { color: var(--muted); text-decoration: line-through; }
+  .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .stars { display: inline-flex; gap: 1px; }
+  .stars .star { font-size: 13px; line-height: 1; background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.18); padding: 1px; transition: color .12s, transform .1s; }
+  .stars .star:hover { transform: scale(1.2); }
+  .stars .star.on { color: var(--c); text-shadow: 0 0 8px color-mix(in srgb, var(--c) 55%, transparent); }
+
+  .due {
+    position: relative; display: inline-flex; align-items: center; gap: 5px; font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 3px 8px; cursor: pointer;
+  }
+  .due:hover { border-color: var(--c); color: var(--text); }
+  .due.set { color: var(--text); border-color: color-mix(in srgb, var(--c) 40%, var(--border)); }
+  .due.overdue { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+  .due-edit { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .due-clear { background: none; border: none; color: inherit; cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 1px; position: relative; z-index: 2; opacity: 0.7; }
+  .due-clear:hover { opacity: 1; color: var(--danger); }
+
+  .del { background: none; border: none; color: var(--muted); cursor: pointer; opacity: 0; font-size: 19px; line-height: 1; padding: 2px 6px; border-radius: 8px; margin-top: 1px; }
+  li.item:hover .del { opacity: 1; }
+  .del:hover { color: var(--danger); }
+  .empty { color: var(--muted); padding: 10px 6px; font-size: 14px; font-style: italic; }
+
+  footer { margin-top: 32px; display: flex; justify-content: space-between; align-items: center; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); }
+  .clear { font: inherit; font-size: 12px; background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; cursor: pointer; color: var(--muted); }
+  .clear:hover { border-color: var(--todo); color: var(--todo); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="topbar">
+        <span class="eyebrow" id="today">// personal os</span>
+        <span class="pill" id="syncStatus" data-state="idle"><span class="ring"></span><span class="label">Local only</span></span>
+        <button class="icon-btn" id="settingsBtn" aria-label="Sync settings" title="Sync settings">⚙</button>
+      </div>
+      <h1>Tasks, <span class="a2">shopping</span> &amp; <span class="a3">dreams</span>.</h1>
+      <p class="sub">One calm, dark dashboard — set due dates and star what matters, and it syncs across your devices.</p>
+
+      <div id="settingsPanel" hidden>
+        <h3>Sync across devices</h3>
+        <p>
+          Paste a GitHub token with <strong>gist</strong> access. Your lists are saved to a private
+          <em>secret gist</em> (not this public repo) and synced everywhere you sign in.
+          <a href="https://github.com/settings/tokens/new?scopes=gist&description=To-Do%20site" target="_blank" rel="noopener">Create a token →</a>
+          The token stays in this browser only.
+        </p>
+        <div class="field">
+          <input type="password" id="tokenInput" placeholder="ghp_… or github_pat_…" autocomplete="off" spellcheck="false" />
+          <button class="btn" id="saveToken">Connect</button>
+        </div>
+        <div class="conn-row">
+          <span id="connState"></span>
+          <span>
+            <a id="gistLink" href="#" target="_blank" rel="noopener" style="display:none">view gist ↗</a>
+            <button class="btn ghost" id="signOut" style="display:none">Sign out</button>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card todo" data-list="todo">
+        <div class="card-top"><span class="glyph"></span><h2>To-Do</h2><span class="count" data-count></span></div>
+        <form class="add" autocomplete="off">
+          <input type="text" placeholder="Add a task…" aria-label="New task" />
+          <input class="due-input" type="date" aria-label="Due date" />
+          <span class="star-pick" role="group" aria-label="Priority">
+            <button type="button" data-star="1">★</button>
+            <button type="button" data-star="2">★</button>
+            <button type="button" data-star="3">★</button>
+          </span>
+          <span class="term-toggle" role="group" aria-label="When">
+            <button type="button" data-term="now" class="on">This week</button>
+            <button type="button" data-term="later">Someday</button>
+          </span>
+          <button class="add-btn" type="submit">Add</button>
+        </form>
+        <div class="cols">
+          <div>
+            <div class="subhead">Today &amp; this week</div>
+            <ul class="list" data-group="now"></ul>
+          </div>
+          <div>
+            <div class="subhead">To handle / someday</div>
+            <ul class="list" data-group="later"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card shopping" data-list="shopping">
+        <div class="card-top"><span class="glyph"></span><h2>Shopping</h2><span class="count" data-count></span></div>
+        <form class="add" autocomplete="off">
+          <input type="text" placeholder="Add an item…" aria-label="New item" />
+          <button class="add-btn" type="submit">Add</button>
+        </form>
+        <ul class="list" data-group="all"></ul>
+      </section>
+
+      <section class="card bucket" data-list="bucket">
+        <div class="card-top"><span class="glyph"></span><h2>Bucket list</h2><span class="count" data-count></span></div>
+        <form class="add" autocomplete="off">
+          <input type="text" placeholder="Add a goal…" aria-label="New goal" />
+          <button class="add-btn" type="submit">Add</button>
+        </form>
+        <ul class="list" data-group="all"></ul>
+      </section>
+    </div>
+
+    <footer>
+      <span id="footnote">tip: click a task's ＋ due to set a date, and the stars to prioritise</span>
+      <button class="clear" id="clearDone">clear completed</button>
+    </footer>
+  </div>
+
+  <script src="assets/storage.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      var d = new Date();
+      document.getElementById('today').textContent =
+        '// ' + d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    })();
+  </script>
+</body>
+</html>

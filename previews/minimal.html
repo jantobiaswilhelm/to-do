@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>To-Do — Minimal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4eee2;
+    --paper-2: #efe7d6;
+    --ink: #211d17;
+    --ink-soft: #6f685b;
+    --line: #d8cdb6;
+    --accent: #b8442b;
+    --radius: 3px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Hanken Grotesk", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(33,29,23,0.035) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 28px 120px; }
+
+  header.masthead { border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 8px; }
+  .kicker {
+    font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-soft); display: flex; justify-content: space-between; align-items: baseline;
+  }
+  h1 {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(44px, 9vw, 86px);
+    line-height: 0.95; letter-spacing: -0.02em; margin-top: 10px;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .sub { font-size: 14px; color: var(--ink-soft); margin-top: 14px; max-width: 46ch; }
+
+  section.block { margin-top: 56px; }
+  .block-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .num { font-family: "Fraunces", serif; font-style: italic; color: var(--accent); font-size: 20px; min-width: 34px; }
+  .block-head h2 { font-family: "Fraunces", serif; font-weight: 500; font-size: 26px; letter-spacing: -0.01em; }
+  .count { margin-left: auto; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+
+  form.add { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
+  form.add input[type="text"] {
+    flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--line);
+    font: inherit; font-size: 16px; padding: 8px 2px; color: var(--ink); outline: none;
+  }
+  form.add input[type="text"]:focus { border-bottom-color: var(--accent); }
+  form.add input::placeholder { color: var(--ink-soft); }
+  .term-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .term-toggle button { font: inherit; font-size: 12px; padding: 5px 12px; background: transparent; border: none; cursor: pointer; color: var(--ink-soft); letter-spacing: 0.04em; }
+  .term-toggle button.on { background: var(--ink); color: var(--paper); }
+  .add-btn {
+    font-family: "Fraunces", serif; font-style: italic; font-size: 18px; background: none;
+    border: none; color: var(--accent); cursor: pointer; padding: 4px 6px;
+  }
+  .add-btn:hover { text-decoration: underline; }
+
+  .subhead { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); margin: 22px 0 6px; }
+
+  ul.list { list-style: none; }
+  li.item {
+    display: flex; align-items: flex-start; gap: 14px; padding: 12px 2px;
+    border-bottom: 1px solid var(--line); animation: rise .35s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .check {
+    appearance: none; -webkit-appearance: none; width: 19px; height: 19px; margin-top: 2px;
+    border: 1.5px solid var(--ink-soft); border-radius: var(--radius); cursor: pointer; position: relative; flex: none;
+    transition: border-color .15s, background .15s;
+  }
+  .check:hover { border-color: var(--accent); }
+  .check:checked { background: var(--accent); border-color: var(--accent); }
+  .check:checked::after {
+    content: ""; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px;
+    border: solid var(--paper); border-width: 0 2px 2px 0; transform: rotate(42deg);
+  }
+  .txt { flex: 1; font-size: 16.5px; padding-top: 1px; word-break: break-word; cursor: text; }
+  li.done .txt { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--line); }
+  .del { background: none; border: none; color: var(--ink-soft); cursor: pointer; opacity: 0; font-size: 18px; line-height: 1; padding: 2px 4px; transition: opacity .15s, color .15s; }
+  li.item:hover .del { opacity: 1; }
+  .del:hover { color: var(--accent); }
+  .empty { color: var(--ink-soft); font-style: italic; font-family: "Fraunces", serif; padding: 10px 2px; font-size: 15px; }
+
+  footer { margin-top: 80px; border-top: 1px solid var(--line); padding-top: 16px; font-size: 12px; color: var(--ink-soft); display: flex; justify-content: space-between; letter-spacing: 0.04em; }
+  footer a { color: var(--accent); }
+  .clear { background: none; border: none; color: var(--ink-soft); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .clear:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="masthead">
+      <div class="kicker"><span>Personal Ledger</span><span id="today"></span></div>
+      <h1>Things&nbsp;to&nbsp;<em>do</em>.</h1>
+      <p class="sub">Tasks to handle, the shopping you need, and the life you mean to get to — kept on one quiet page.</p>
+    </header>
+
+    <section class="block" data-list="todo">
+      <div class="block-head"><span class="num">01</span><h2>To-Do</h2><span class="count" data-count></span></div>
+      <form class="add" autocomplete="off">
+        <input type="text" placeholder="Add a task…" aria-label="New task" />
+        <span class="term-toggle" role="group" aria-label="When">
+          <button type="button" data-term="now" class="on">This week</button>
+          <button type="button" data-term="later">Someday</button>
+        </span>
+        <button class="add-btn" type="submit">add</button>
+      </form>
+      <div class="subhead">Today &amp; this week</div>
+      <ul class="list" data-group="now"></ul>
+      <div class="subhead">To handle / someday</div>
+      <ul class="list" data-group="later"></ul>
+    </section>
+
+    <section class="block" data-list="shopping">
+      <div class="block-head"><span class="num">02</span><h2>Shopping list</h2><span class="count" data-count></span></div>
+      <form class="add" autocomplete="off">
+        <input type="text" placeholder="Add an item…" aria-label="New item" />
+        <button class="add-btn" type="submit">add</button>
+      </form>
+      <ul class="list" data-group="all"></ul>
+    </section>
+
+    <section class="block" data-list="bucket">
+      <div class="block-head"><span class="num">03</span><h2>Bucket list</h2><span class="count" data-count></span></div>
+      <form class="add" autocomplete="off">
+        <input type="text" placeholder="Add a goal…" aria-label="New goal" />
+        <button class="add-btn" type="submit">add</button>
+      </form>
+      <ul class="list" data-group="all"></ul>
+    </section>
+
+    <footer>
+      <span>Saved in this browser · preview</span>
+      <button class="clear" id="clearDone">clear completed</button>
+    </footer>
+  </div>
+
+  <script src="../assets/storage.js"></script>
+  <script src="../assets/preview-app.js"></script>
+  <script>
+    (function () {
+      var d = new Date();
+      document.getElementById('today').textContent =
+        d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+      PreviewApp.start();
+    })();
+  </script>
+</body>
+</html>

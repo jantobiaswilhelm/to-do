@@ -1,0 +1,9 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# The GitHub token is stored only in the browser (localStorage),
+# never written to disk — nothing token-related to ignore here.
